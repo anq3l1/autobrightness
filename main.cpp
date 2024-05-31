@@ -1,20 +1,86 @@
-﻿// main.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
-
 #include <iostream>
+#include <opencv2/opencv.hpp>
+#include <windows.h>
+#include <string>
+#include <thread>
+#include <chrono>
+
+using namespace cv;
+
+void set_brightness(int level)
+{
+    std::string brightnessCommand = "(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, " + std::to_string(level) + ")";
+    std::string command = "powershell.exe -command \"" + brightnessCommand + "\"";
+    system(command.c_str());
+}
+
+void get_light_room(Mat img, std::vector<int> thresholds = { 30, 60, 120, 180 })
+{
+    setlocale(LC_ALL, "ru");
+
+    Mat gray;
+    cvtColor(img, gray, COLOR_BGR2GRAY);
+    double mean_brightness = mean(gray)[0];
+
+    if (mean_brightness < thresholds[0])
+    {
+        std::cout << "Очень темно" << std::endl;
+        set_brightness(30);
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+    else if (mean_brightness < thresholds[1])
+    {
+        std::cout << "Темно" << std::endl;
+        set_brightness(50);
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+    else if (mean_brightness < thresholds[2])
+    {
+        std::cout << "Ярко" << std::endl;
+        set_brightness(70);
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+    else if (mean_brightness < thresholds[3])
+    {
+        std::cout << "Очень ярко" << std::endl;
+        set_brightness(100);
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
+}
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    setlocale(LC_ALL, "ru");
+
+    VideoCapture capture(0);
+    if (!capture.isOpened())
+    {
+        std::cerr << "Ошибка открытия камеры" << std::endl;
+        return -1;
+    }
+
+    Mat img;
+    while (true) {
+        capture >> img;
+        if (img.empty()) {
+            std::cerr << "Ошибка захвата кадра" << std::endl;
+            break;
+        }
+
+        flip(img, img, 1);
+
+        get_light_room(img);
+
+        //cv::imshow("From camera", frame);
+
+        int k = cv::waitKey(30) & 0xFF;
+        if (k == 27)
+        {
+            set_brightness(60);
+            std::cout << "Яркость поставленна на 60%" << std::endl;
+            break;
+        }
+    }
+
+    return 0;
 }
-
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
-
-// Советы по началу работы 
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" > "Открыть" > "Проект" и выберите SLN-файл.
