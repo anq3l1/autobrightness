@@ -7,3 +7,5 @@ ___
 # What is this program?
 
 This program changes the brightness depending on the lighting in your room or location, in other words, auto-brightness, the program uses the camera using the OpenCV library, the program is not fully completed yet, but is ready for use, the idea seems quite interesting to me, I’ll try to add something or do more.
+
+`angel`
